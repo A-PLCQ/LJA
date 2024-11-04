@@ -1,8 +1,7 @@
 // config/config.js - Centralized Configuration File
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
-require('dotenv').config(); // Load environment variables from the .env file
-
-// Validation to ensure all necessary environment variables are set
 const requiredEnvVariables = [
   'EMAIL_USER',
   'EMAIL_PASS',
@@ -17,11 +16,11 @@ const requiredEnvVariables = [
 
 requiredEnvVariables.forEach((key) => {
   if (!process.env[key]) {
+    console.log(`Missing variable: ${key}`); // Debug
     throw new Error(`Missing ${key} in .env file`);
   }
 });
 
-// Exporting configuration values
 module.exports = {
   email: {
     user: process.env.EMAIL_USER,
