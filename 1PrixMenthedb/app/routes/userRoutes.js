@@ -1,44 +1,42 @@
-// userRoutes.js - Routes for User Operations
-
 const express = require('express');
-const userController = require('../controllers/userController');
-const userValidator = require('../validators/userValidator');
-const authMiddleware = require('../middlewares/authMiddleware');
+const userController = require('../controllers/userController'); // Importation du contrôleur utilisateur complet
+const { validateCreateUser, validateLoginUser } = require('../validators/userValidator');
+const authMiddleware = require('../middlewares/authMiddleware').authMiddleware;
+const adminMiddleware = require('../middlewares/adminMiddleware');
+const rateLimiterMiddleware = require('../middlewares/rateLimiterMiddleware');
+
 const router = express.Router();
 
-// Debugging log to verify imported functions
-console.log('userController:', userController);
-console.log('userValidator:', userValidator);
-console.log('authMiddleware:', authMiddleware);
+// Route pour l'inscription de l'utilisateur avec validation de l'email
+router.post('/register', validateCreateUser, userController.registerUser);
 
-// Sign Up Route
-router.post('/signup', (req, res, next) => {
-  console.log('Route /signup appelée');
-  userValidator.validateCreateUser(req, res, next);
-}, userController.signUp);
+// Route pour la connexion de l'utilisateur
+router.post('/login', validateLoginUser, userController.loginUser);
 
-// Login Route
-router.post('/login', (req, res, next) => {
-  console.log('Route /login appelée');
-  userValidator.validateLoginUser(req, res, next);
-}, userController.login);
+// Route pour la récupération du profil utilisateur (nécessite une authentification)
+router.get('/profile', authMiddleware, userController.getUserProfile);
 
-// Get User by ID Route (Auth required)
-router.get('/:id', (req, res, next) => {
-  console.log('Route /:id appelée');
-  authMiddleware.authMiddleware(req, res, next);
-}, userController.getUserById);
+// Route pour la mise à jour du profil utilisateur (nécessite une authentification)
+router.put('/profile', authMiddleware, userController.updateUserProfile);
 
-// Request Password Reset Route
-router.post('/request-password-reset', (req, res, next) => {
-  console.log('Route /request-password-reset appelée');
-  userValidator.validateLoginUser(req, res, next);
-}, userController.requestPasswordReset);
+// Route pour la suppression du compte utilisateur (nécessite une authentification)
+router.delete('/profile', authMiddleware, userController.deleteUser);
 
-// Reset Password Route
-router.post('/reset-password/:token', userController.resetPassword);
+// Route pour demander un code de réinitialisation de mot de passe (protégé par rate limit)
+router.post('/password-reset', rateLimiterMiddleware, userController.requestPasswordReset);
 
-// Refresh Token Route
-router.post('/refresh-token', userController.refreshToken);
+// Route pour réinitialiser le mot de passe avec le code de validation (protégé par rate limit)
+router.post('/password-reset/confirm', rateLimiterMiddleware, userController.resetPassword);
+
+// Route d'exemple pour les administrateurs : accès à tous les utilisateurs (nécessite le rôle administrateur)
+router.get('/admin/users', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const [users] = await db.query('SELECT id_utilisateur, nom, email FROM users');
+    res.json(users);
+  } catch (error) {
+    logger.error(`Erreur lors de la récupération des utilisateurs: ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
 
 module.exports = router;

@@ -2,144 +2,179 @@
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const db = require('../config/db'); // Assuming you have a MySQL connection file
+const db = require('../config/db');
 const logger = require('../config/logger');
+const authService = require('../services/authService');
+const emailService = require('../services/emailService');
 require('dotenv').config();
 
-// Sign Up a New User
-const signUp = async (req, res) => {
+// Inscription de l'utilisateur
+const registerUser = async (req, res) => {
   try {
     const { email, password, username } = req.body;
+    const hashedPassword = await authService.hashPassword(password);
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Save user to the database
-    const query = 'INSERT INTO users (email, password, username) VALUES (?, ?, ?)';
-    await db.query(query, [email, hashedPassword, username]);
+    await db.query('INSERT INTO users (email, mot_de_passe, nom) VALUES (?, ?, ?)', [
+      email, hashedPassword, username
+    ]);
 
     res.status(201).json({ message: 'Utilisateur créé avec succès' });
   } catch (error) {
-    logger.error("Erreur lors de la création de l'utilisateur:", error);
-    res.status(500).json({ error: "Erreur lors de la création de l'utilisateur" });
+    logger.error(`Erreur lors de l'inscription: ${error.message}`);
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'Cet email est déjà utilisé' });
+    }
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
-// Log in a User
-const login = async (req, res) => {
+// Connexion de l'utilisateur
+const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const [users] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
 
-    // Find user by email
-    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    const user = rows[0];
-
-    if (!user) {
+    if (users.length === 0) {
       return res.status(401).json({ error: 'Utilisateur non trouvé' });
     }
 
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const user = users[0];
+    const isMatch = await authService.comparePasswords(password, user.mot_de_passe);
+
     if (!isMatch) {
       return res.status(401).json({ error: 'Mot de passe incorrect' });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.status(200).json({ message: 'Connexion réussie', token });
+    const token = authService.generateToken(user);
+    const refreshToken = await authService.generateRefreshToken(user);
+
+    res.json({ token, refreshToken });
   } catch (error) {
-    logger.error("Erreur lors de la connexion de l'utilisateur:", error);
-    res.status(500).json({ error: 'Erreur lors de la connexion' });
+    logger.error(`Erreur lors de la connexion: ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
-// Get User by ID
-const getUserById = async (req, res) => {
+// Récupération du profil utilisateur connecté
+const getUserProfile = async (req, res) => {
   try {
-    const userId = req.params.id;
+    const { id_utilisateur } = req.user;
+    const [users] = await db.query('SELECT id_utilisateur, nom, email FROM users WHERE id_utilisateur = ?', [id_utilisateur]);
 
-    // Retrieve user by ID
-    const [rows] = await db.query('SELECT id, email, username FROM users WHERE id = ?', [userId]);
-    const user = rows[0];
-
-    if (!user) {
+    if (users.length === 0) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
-    res.status(200).json(user);
+    res.json(users[0]);
   } catch (error) {
-    logger.error("Erreur lors de la récupération de l'utilisateur:", error);
-    res.status(500).json({ error: "Erreur lors de la récupération de l'utilisateur" });
+    logger.error(`Erreur lors de la récupération du profil: ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
-// Request Password Reset
+// Mise à jour du profil utilisateur
+const updateUserProfile = async (req, res) => {
+  try {
+    const { id_utilisateur } = req.user;
+    const { email, username, adresse, telephone } = req.body;
+
+    await db.query(
+      'UPDATE users SET email = ?, nom = ?, adresse = ?, telephone = ? WHERE id_utilisateur = ?',
+      [email, username, adresse, telephone, id_utilisateur]
+    );
+
+    res.status(200).json({ message: 'Profil mis à jour avec succès' });
+  } catch (error) {
+    logger.error(`Erreur lors de la mise à jour du profil: ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+// Suppression du compte utilisateur
+const deleteUser = async (req, res) => {
+  try {
+    const { id_utilisateur } = req.user;
+    await db.query('DELETE FROM users WHERE id_utilisateur = ?', [id_utilisateur]);
+    res.status(200).json({ message: 'Compte utilisateur supprimé avec succès' });
+  } catch (error) {
+    logger.error(`Erreur lors de la suppression de l'utilisateur: ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+// Demande de réinitialisation de mot de passe
 const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
+    const [users] = await db.query('SELECT id_utilisateur FROM users WHERE email = ?', [email]);
 
-    // Find user by email
-    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    const user = rows[0];
-
-    if (!user) {
+    if (users.length === 0) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
-    // Generate reset token
-    const resetToken = jwt.sign({ userId: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '15m' });
-    // Send reset token via email (mocked)
-    logger.info(`Email de réinitialisation envoyé à ${email} avec le token : ${resetToken}`);
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString(); // Génère un code à 6 chiffres
+    const resetCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // Expiration dans 15 minutes
 
-    res.status(200).json({ message: 'Email de réinitialisation envoyé' });
+    // Met à jour la base de données avec le code de réinitialisation et son expiration
+    await db.query('UPDATE users SET reset_code = ?, reset_code_expiry = ? WHERE id_utilisateur = ?', [
+      resetCode, resetCodeExpiry, users[0].id_utilisateur
+    ]);
+
+    // Envoie l'email avec le code de réinitialisation
+    await emailService.sendResetEmail(email, resetCode);
+    res.status(200).json({ message: 'Un email de réinitialisation a été envoyé' });
   } catch (error) {
-    logger.error('Erreur lors de la demande de réinitialisation du mot de passe:', error);
-    res.status(500).json({ error: 'Erreur lors de la demande de réinitialisation du mot de passe' });
+    logger.error(`Erreur lors de la demande de réinitialisation: ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
-// Reset Password
+// Réinitialisation du mot de passe
 const resetPassword = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { newPassword } = req.body;
+    const { email, resetCode, newPassword } = req.body;
 
-    // Verify reset token
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    // Vérifie si l'utilisateur existe avec le code de réinitialisation valide et non expiré
+    const [users] = await db.query(
+      'SELECT * FROM users WHERE email = ? AND reset_code = ? AND reset_code_expiry > ?',
+      [email, resetCode, Date.now()]
+    );
 
-    // Hash the new password
+    if (users.length === 0) {
+      return res.status(400).json({ message: 'Code de réinitialisation invalide ou expiré' });
+    }
+
+    const user = users[0];
+
+    // Vérifie si le nouveau mot de passe est identique à l'ancien
+    const isSamePassword = await bcrypt.compare(newPassword, user.mot_de_passe);
+    if (isSamePassword) {
+      return res.status(400).json({ message: 'Le nouveau mot de passe doit être différent de l\'ancien' });
+    }
+
+    // Hacher le nouveau mot de passe
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update user password in the database
-    await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, decoded.userId]);
+    // Mettre à jour le mot de passe et supprimer le code de réinitialisation
+    await db.query(
+      'UPDATE users SET mot_de_passe = ?, reset_code = NULL, reset_code_expiry = NULL WHERE email = ?',
+      [hashedPassword, email]
+    );
 
     res.status(200).json({ message: 'Mot de passe réinitialisé avec succès' });
   } catch (error) {
-    logger.error('Erreur lors de la réinitialisation du mot de passe:', error);
-    res.status(500).json({ error: 'Erreur lors de la réinitialisation du mot de passe' });
+    console.error('Erreur lors de la réinitialisation du mot de passe :', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
-// Refresh Token
-const refreshToken = async (req, res) => {
-  try {
-    const { refreshToken } = req.body;
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-
-    // Generate a new access token
-    const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.status(200).json({ token: newToken });
-  } catch (error) {
-    logger.error('Erreur lors du renouvellement du token:', error);
-    res.status(500).json({ error: 'Erreur lors du renouvellement du token' });
-  }
-};
 
 module.exports = {
-  signUp,
-  login,
-  getUserById,
+  registerUser,
+  loginUser,
+  getUserProfile,
+  updateUserProfile,
+  deleteUser,
   requestPasswordReset,
-  resetPassword,
-  refreshToken,
+  resetPassword
 };

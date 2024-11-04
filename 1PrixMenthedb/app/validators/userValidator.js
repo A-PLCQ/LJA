@@ -1,53 +1,46 @@
-// userValidator.js
+const { body, validationResult } = require('express-validator');
 
-const Joi = require('joi');
+// Middleware pour valider les données lors de l'inscription d'un utilisateur
+const validateCreateUser = [
+  body('email').isEmail().withMessage('Email invalide'),
+  body('password')
+    .isLength({ min: 8 }).withMessage('Le mot de passe doit contenir au moins 8 caractères')
+    .matches(/[A-Z]/).withMessage('Le mot de passe doit contenir au moins une lettre majuscule')
+    .matches(/[a-z]/).withMessage('Le mot de passe doit contenir au moins une lettre minuscule')
+    .matches(/[0-9]/).withMessage('Le mot de passe doit contenir au moins un chiffre')
+    .matches(/[\W_]/).withMessage('Le mot de passe doit contenir au moins un caractère spécial'),
+  body('username').notEmpty().withMessage('Le nom d\'utilisateur est requis'),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
 
-// Validation for user signup
-const validateCreateUser = (req, res, next) => {
-  console.log('Requête reçue pour validateCreateUser:', req.body);
-  const schema = Joi.object({
-    email: Joi.string().email().required().messages({
-      'string.email': 'Email invalide',
-      'any.required': 'L\'email est requis'
-    }),
-    password: Joi.string().min(6).required().messages({
-      'string.min': 'Le mot de passe doit contenir au moins 6 caractères',
-      'any.required': 'Le mot de passe est requis'
-    }),
-    username: Joi.string().required().messages({
-      'any.required': 'Le nom d\'utilisateur est requis'
-    }),
-  });
+// Middleware pour valider la réinitialisation du mot de passe avec le code et le nouveau mot de passe
+const validateResetPasswordConfirmation = [
+  body('email').isEmail().withMessage('Email invalide'),
+  body('code').isLength({ min: 6, max: 6 }).withMessage('Le code doit contenir 6 chiffres'),
+  body('newPassword')
+    .isLength({ min: 8 }).withMessage('Le nouveau mot de passe doit contenir au moins 8 caractères')
+    .matches(/[A-Z]/).withMessage('Le nouveau mot de passe doit contenir au moins une lettre majuscule')
+    .matches(/[a-z]/).withMessage('Le nouveau mot de passe doit contenir au moins une lettre minuscule')
+    .matches(/[0-9]/).withMessage('Le nouveau mot de passe doit contenir au moins un chiffre')
+    .matches(/[\W_]/).withMessage('Le nouveau mot de passe doit contenir au moins un caractère spécial'),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
 
-  const { error } = schema.validate(req.body);
-  if (error) {
-    console.error('Erreur de validation:', error.details);
-    return res.status(400).json({ errors: error.details.map((detail) => detail.message) });
-  }
-  next();
-};
-
-// Validation for user login
-const validateLoginUser = (req, res, next) => {
-  const schema = Joi.object({
-    email: Joi.string().email().required().messages({
-      'string.email': 'Email invalide',
-      'any.required': 'L\'email est requis'
-    }),
-    password: Joi.string().required().messages({
-      'any.required': 'Le mot de passe est requis'
-    }),
-  });
-
-  const { error } = schema.validate(req.body);
-  if (error) {
-    return res.status(400).json({ errors: error.details.map((detail) => detail.message) });
-  }
-  next();
-};
-
-// Export the validators as middlewares
 module.exports = {
   validateCreateUser,
   validateLoginUser,
+  validatePasswordReset,
+  validateResetPasswordConfirmation,
 };

@@ -1,5 +1,4 @@
 // customErrors.js - Définitions des erreurs personnalisées
-// customErrors.js
 
 class CustomError extends Error {
     constructor(message, statusCode) {

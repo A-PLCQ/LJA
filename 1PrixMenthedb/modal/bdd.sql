@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
   adresse VARCHAR(255),
   role VARCHAR(50) DEFAULT 'user',
   last_login DATETIME
+  reset_code VARCHAR(6);
+  reset_code_expiry DATETIME
 );
 
 -- Table des imprimantes (printers)
