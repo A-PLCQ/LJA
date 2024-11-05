@@ -10,11 +10,13 @@ const config = require('./app/config/config');
 
 // Importation des routes
 const userRoutes = require('./app/routes/userRoutes');
-// const printerRoutes = require('./app/routes/printerRoutes'); // Exemples pour d'autres fonctionnalités
-// const consumableRoutes = require('./app/routes/consumableRoutes');
+const printerRoutes = require('./app/routes/printerRoutes'); 
+const consumableRoutes = require('./app/routes/consumableRoutes');
+const compatibleRoutes = require('./app/routes/compatibleRoutes');
+const imageRoutes = require('./app/routes/imageRoutes');
+
 // const cartRoutes = require('./app/routes/cartRoutes');
 // const paymentRoutes = require('./app/routes/paymentRoutes');
-// const imageRoutes = require('./app/routes/imageRoutes');
 
 // Importation des middlewares
 const errorHandlerMiddleware = require('./app/middlewares/errorHandler'); // Renommé pour éviter la confusion
@@ -49,12 +51,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Définition des routes
-app.use('/api/users', userRoutes);           // Routes utilisateur
-// app.use('/api/printers', printerRoutes);     // Routes pour les imprimantes
-// app.use('/api/consumables', consumableRoutes); // Routes pour les consommables
+app.use('/api/users', userRoutes); // Routes utilisateur
+app.use('/api/printers', printerRoutes); // Ajouter les routes d'imprimantes
+app.use('/api/consumables', consumableRoutes); // Routes pour les consommables
+app.use('/api/images', imageRoutes); // Routes pour la gestion des images
+
+app.use('/api/compatibility', compatibleRoutes);
 // app.use('/api/cart', authMiddleware, cartRoutes); // Routes panier (protégé par authMiddleware)
 // app.use('/api/payments', authMiddleware, paymentRoutes); // Routes de paiement
-// app.use('/api/images', imageRoutes);         // Routes pour la gestion des images
+
 
 // Utilisation du middleware de gestion des erreurs
 app.use(errorHandlerMiddleware);
