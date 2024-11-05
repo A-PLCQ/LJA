@@ -9,8 +9,8 @@ const roleMiddleware = (requiredRoles) => {
     try {
       const { id_utilisateur } = req.user; // Assumes `req.user` is defined by `authMiddleware`
 
-      // Query to get the role of the user from the database
-      const [users] = await db.query('SELECT role FROM utilisateur WHERE id_utilisateur = ?', [id_utilisateur]);
+      // Query to get the role of the user from the correct table name `users`
+      const [users] = await db.query('SELECT role FROM users WHERE id_utilisateur = ?', [id_utilisateur]);
       
       if (users.length === 0) {
         logger.warn(`Role verification failed: User not found with ID ${id_utilisateur}`);

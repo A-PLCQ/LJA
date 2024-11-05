@@ -38,12 +38,19 @@ const getImages = (req, res) => {
   const folderPath = path.join(__dirname, '../../uploads', type, brand, model);
 
   try {
-    const files = fs.readdirSync(folderPath).map(file => path.join(`/uploads/${type}/${brand}/${model}`, file));
+    const files = fs.readdirSync(folderPath).map(file => {
+      // Générer le chemin d'accès correct et appliquer les remplacements
+      return path.join(`/uploads/${type}/${brand}/${model}`, file)
+        .replace(/\\/g, '/') // Remplace les backslashes par des slashes
+        .replace(/ /g, '-'); // Remplace les espaces par des tirets
+    });
+    
     res.status(200).json({ images: files });
   } catch (error) {
     res.status(404).json({ message: 'Images non trouvées', error: error.message });
   }
 };
+
 
 // Fonction pour supprimer une image spécifique
 const deleteImage = (req, res) => {

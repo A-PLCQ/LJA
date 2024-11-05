@@ -45,8 +45,18 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ error: 'Mot de passe incorrect' });
     }
 
+    // Générer le token et le refresh token
     const token = authService.generateToken(user);
     const refreshToken = await authService.generateRefreshToken(user);
+
+    // Mettre à jour la colonne last_login avec l'heure locale
+    const now = new Date();
+    const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 19)
+      .replace('T', ' ');
+
+    await db.query('UPDATE users SET last_login = ? WHERE id_utilisateur = ?', [localDate, user.id_utilisateur]);
 
     res.json({ token, refreshToken });
   } catch (error) {
@@ -55,22 +65,27 @@ const loginUser = async (req, res) => {
   }
 };
 
+
 // Récupération du profil utilisateur connecté
 const getUserProfile = async (req, res) => {
   try {
     const { id_utilisateur } = req.user;
-    const [users] = await db.query('SELECT id_utilisateur, nom, email FROM users WHERE id_utilisateur = ?', [id_utilisateur]);
+    const [users] = await db.query(
+      'SELECT id_utilisateur, nom, prenom, email, adresse, telephone FROM users WHERE id_utilisateur = ?', 
+      [id_utilisateur]
+    );
 
     if (users.length === 0) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
-    res.json(users[0]);
+    res.json(users[0]); // Retourne toutes les informations nécessaires
   } catch (error) {
     logger.error(`Erreur lors de la récupération du profil: ${error.message}`);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
+
 
 // Récupérer tous les utilisateurs (accès réservé aux administrateurs)
 const getAllUsers = async (req, res) => {
@@ -196,12 +211,15 @@ const requestPasswordReset = async (req, res) => {
 // Réinitialisation du mot de passe
 const resetPassword = async (req, res) => {
   try {
-    const { email, resetCode, newPassword } = req.body;
+    const { email, code, newPassword } = req.body;
+
+    // Formater la date actuelle pour la comparaison dans MySQL
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     // Vérifie si l'utilisateur existe avec le code de réinitialisation valide et non expiré
     const [users] = await db.query(
       'SELECT * FROM users WHERE email = ? AND reset_code = ? AND reset_code_expiry > ?',
-      [email, resetCode, Date.now()]
+      [email, code, now]
     );
 
     if (users.length === 0) {
@@ -231,6 +249,7 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };
+
 
 module.exports = {
   registerUser,
