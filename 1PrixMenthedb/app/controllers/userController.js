@@ -72,6 +72,70 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+// Récupérer tous les utilisateurs (accès réservé aux administrateurs)
+const getAllUsers = async (req, res) => {
+  try {
+    const [users] = await db.query(
+      'SELECT id_utilisateur, nom, prenom, email, telephone, adresse, role, last_login FROM users'
+    );
+    res.status(200).json(users);
+  } catch (error) {
+    logger.error(`Erreur lors de la récupération des utilisateurs : ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+// Récupérer les informations d'un utilisateur par ID (accès réservé aux administrateurs)
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [users] = await db.query(
+      'SELECT id_utilisateur, nom, prenom, email, telephone, adresse, role, last_login FROM users WHERE id_utilisateur = ?',
+      [id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    res.status(200).json(users[0]);
+  } catch (error) {
+    logger.error(`Erreur lors de la récupération de l'utilisateur : ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+
+
+// Supprimer un utilisateur par ID (accès réservé aux administrateurs)
+const deleteUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM users WHERE id_utilisateur = ?', [id]);
+    res.status(200).json({ message: 'Utilisateur supprimé avec succès' });
+  } catch (error) {
+    logger.error(`Erreur lors de la suppression de l'utilisateur : ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+// Modifier le rôle d'un utilisateur (accès réservé aux administrateurs)
+const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!['user', 'manager', 'admin'].includes(role)) {
+      return res.status(400).json({ message: 'Rôle invalide' });
+    }
+
+    await db.query('UPDATE users SET role = ? WHERE id_utilisateur = ?', [role, id]);
+    res.status(200).json({ message: 'Rôle mis à jour avec succès' });
+  } catch (error) {
+    logger.error(`Erreur lors de la mise à jour du rôle : ${error.message}`);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
 // Mise à jour du profil utilisateur
 const updateUserProfile = async (req, res) => {
   try {
@@ -168,7 +232,6 @@ const resetPassword = async (req, res) => {
   }
 };
 
-
 module.exports = {
   registerUser,
   loginUser,
@@ -176,5 +239,9 @@ module.exports = {
   updateUserProfile,
   deleteUser,
   requestPasswordReset,
-  resetPassword
+  resetPassword,
+  getAllUsers,
+  getUserById,
+  deleteUserById,
+  updateUserRole
 };

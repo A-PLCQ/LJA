@@ -28,7 +28,10 @@ router.post('/password-reset', rateLimiterMiddleware, validatePasswordReset, use
 // Route pour confirmer la réinitialisation du mot de passe
 router.post('/password-reset/confirm', rateLimiterMiddleware, validateResetPasswordConfirmation, userController.resetPassword);
 
-// Route d'administration pour récupérer tous les utilisateurs (admin seulement)
-router.get('/admin/users', authMiddleware, roleMiddleware(['admin']), userController.getAllUsers);
+// Routes administrateur
+router.get('/admin/users', authMiddleware, roleMiddleware(['admin']), userController.getAllUsers); // Récupérer tous les utilisateurs
+router.get('/admin/users/:id', authMiddleware, roleMiddleware(['admin']), userController.getUserById); // Récupérer un utilisateur par ID
+router.delete('/admin/users/:id', authMiddleware, roleMiddleware(['admin']), userController.deleteUserById); // Supprimer un utilisateur par ID
+router.put('/admin/users/:id/role', authMiddleware, roleMiddleware(['admin']), userController.updateUserRole); // Modifier le rôle d'un utilisateur
 
 module.exports = router;
