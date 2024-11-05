@@ -11,11 +11,12 @@ CREATE TABLE IF NOT EXISTS users (
   mot_de_passe VARCHAR(255),
   telephone VARCHAR(15),
   adresse VARCHAR(255),
-  role VARCHAR(50) DEFAULT 'user',
-  last_login DATETIME
-  reset_code VARCHAR(6);
+  role ENUM('user', 'manager', 'admin') DEFAULT 'user', 
+  last_login DATETIME,
+  reset_code VARCHAR(6),
   reset_code_expiry DATETIME
 );
+
 
 -- Table des imprimantes (printers)
 CREATE TABLE IF NOT EXISTS printers (

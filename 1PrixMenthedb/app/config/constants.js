@@ -31,9 +31,9 @@ const PAYMENT_METHOD = {
 
 // Rôles utilisateurs
 const USER_ROLES = {
-  ADMIN: 'admin',
-  CUSTOMER: 'customer',
+  USER: 'user',
   MANAGER: 'manager',
+  ADMIN: 'admin',
 };
 
 // Statuts de livraison
