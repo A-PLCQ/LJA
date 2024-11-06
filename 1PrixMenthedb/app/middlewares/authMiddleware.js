@@ -16,7 +16,16 @@ const authMiddleware = (requiredRole) => (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET); // Vérifie le token JWT
-    req.user = decoded;
+    
+    // S'assurer que l'ID utilisateur est un nombre valide
+    if (typeof decoded.id_utilisateur !== 'number') {
+      throw new Error("L'identifiant utilisateur extrait du token n'est pas un nombre valide.");
+    }
+
+    req.user = {
+      id_utilisateur: decoded.id_utilisateur, // Assignation de l'ID utilisateur comme un nombre
+      role: decoded.role
+    };
 
     // Vérification du rôle requis
     if (requiredRole && decoded.role !== requiredRole) {
