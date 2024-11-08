@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
   reset_code VARCHAR(6),
   reset_code_expiry DATETIME
 );
-
+ 
 
 -- Table des imprimantes (printers)
 CREATE TABLE IF NOT EXISTS printers (
@@ -120,7 +120,6 @@ CREATE TABLE IF NOT EXISTS cart_items (
     FOREIGN KEY (id_printer) REFERENCES printers(id_printer),
     FOREIGN KEY (id_consumable) REFERENCES consumables(id_consumable)
 );
-
 
 -- Création de la table commande_produit pour relier les commandes aux produits (imprimantes et consommables)
 CREATE TABLE IF NOT EXISTS order_items (

@@ -10,17 +10,10 @@ const config = require('./app/config/config');
 
 // Importation des routes
 const userRoutes = require('./app/routes/userRoutes');
-const printerRoutes = require('./app/routes/printerRoutes'); 
-const consumableRoutes = require('./app/routes/consumableRoutes');
-const compatibleRoutes = require('./app/routes/compatibleRoutes');
-const imageRoutes = require('./app/routes/imageRoutes');
-const cartRoutes = require('./app/routes/cartRoutes');
 
-// const orderRoutes = require('./app/routes/orderRoutes'); // Routes des commandes (à créer)
-// const paymentRoutes = require('./app/routes/paymentRoutes'); // Routes de paiement (à créer)
 
 // Importation des middlewares
-const errorHandlerMiddleware = require('./app/middlewares/errorHandler'); // Renommé pour éviter la confusion
+const errorHandlerMiddleware = require('./app/middlewares/errorHandler'); 
 const authMiddleware = require('./app/middlewares/authMiddleware').authMiddleware;
 
 // Initialisation de l'application express
@@ -47,14 +40,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Définition des routes
 app.use('/api/users', userRoutes); // Routes utilisateur
-app.use('/api/printers', printerRoutes); // Routes d'imprimantes
-app.use('/api/consumables', consumableRoutes); // Routes pour les consommables
-app.use('/api/images', imageRoutes); // Routes pour la gestion des images
-app.use('/api/compatibility', compatibleRoutes); // Routes de compatibilité
-app.use('/api/cart', authMiddleware, cartRoutes); // Routes panier (protégé par authMiddleware)
 
-// app.use('/api/orders', authMiddleware, orderRoutes); // Routes de commandes (protégé par authMiddleware)
-// app.use('/api/payments', authMiddleware, paymentRoutes); // Routes de paiement (protégé par authMiddleware)
 
 // Middleware pour gérer les routes non trouvées (404)
 app.use((req, res, next) => {

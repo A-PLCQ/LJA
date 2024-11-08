@@ -1,15 +1,18 @@
+// userValidator.js - Validation centralisée pour les utilisateurs
+
 const { body, validationResult } = require('express-validator');
 
 // Middleware pour valider les données lors de l'inscription d'un utilisateur
 const validateCreateUser = [
-  body('email').isEmail().withMessage('Email invalide'),
+  body('nom').isString().isLength({ min: 2 }).withMessage('Le nom doit contenir au moins 2 caractères.'),
+  body('prenom').isString().isLength({ min: 2 }).withMessage('Le prénom doit contenir au moins 2 caractères.'),
+  body('email').isEmail().withMessage('Veuillez entrer un email valide.'),
   body('password')
     .isLength({ min: 8 }).withMessage('Le mot de passe doit contenir au moins 8 caractères')
     .matches(/[A-Z]/).withMessage('Le mot de passe doit contenir au moins une lettre majuscule')
     .matches(/[a-z]/).withMessage('Le mot de passe doit contenir au moins une lettre minuscule')
     .matches(/[0-9]/).withMessage('Le mot de passe doit contenir au moins un chiffre')
     .matches(/[\W_]/).withMessage('Le mot de passe doit contenir au moins un caractère spécial'),
-  body('username').notEmpty().withMessage('Le nom d\'utilisateur est requis'),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -21,16 +24,16 @@ const validateCreateUser = [
 
 // Middleware pour valider les données lors de la mise à jour du profil utilisateur
 const validateUpdateUserProfile = [
+  body('nom').optional().isString().isLength({ min: 2 }).withMessage('Le nom doit contenir au moins 2 caractères.'),
+  body('prenom').optional().isString().isLength({ min: 2 }).withMessage('Le prénom doit contenir au moins 2 caractères.'),
   body('email').optional().isEmail().withMessage('Email invalide'),
   body('password')
-    .optional() // Rendre le mot de passe optionnel
+    .optional()
     .isLength({ min: 8 }).withMessage('Le mot de passe doit contenir au moins 8 caractères')
     .matches(/[A-Z]/).withMessage('Le mot de passe doit contenir au moins une lettre majuscule')
     .matches(/[a-z]/).withMessage('Le mot de passe doit contenir au moins une lettre minuscule')
     .matches(/[0-9]/).withMessage('Le mot de passe doit contenir au moins un chiffre')
     .matches(/[\W_]/).withMessage('Le mot de passe doit contenir au moins un caractère spécial'),
-  body('username').optional().notEmpty().withMessage("Le nom d'utilisateur est requis"),
-  // Ajoutez d'autres champs comme adresse ou téléphone si nécessaire
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -39,11 +42,11 @@ const validateUpdateUserProfile = [
     next();
   },
 ];
+
 // Middleware pour valider les données lors de la connexion d'un utilisateur
 const validateLoginUser = [
   body('email').isEmail().withMessage('Email invalide'),
-  body('password')
-    .isLength({ min: 8 }).withMessage('Le mot de passe doit contenir au moins 8 caractères'),
+  body('password').isLength({ min: 8 }).withMessage('Le mot de passe doit contenir au moins 8 caractères'),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
