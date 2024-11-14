@@ -9,8 +9,9 @@ const logger = require('./app/config/logger');
 const config = require('./app/config/config');
 
 // Importation des routes
+const authRoutes = require('./app/routes/authRoutes');
+const adminRoutes = require('./app/routes/adminRoutes');
 const userRoutes = require('./app/routes/userRoutes');
-
 
 // Importation des middlewares
 const errorHandlerMiddleware = require('./app/middlewares/errorHandler'); 
@@ -39,7 +40,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Définition des routes
-app.use('/api/users', userRoutes); // Routes utilisateur
+app.use('/auth', authRoutes);
+app.use('/admin', adminRoutes); // Routes administrateur
+app.use('/users', userRoutes); // Routes utilisateur
 
 
 // Middleware pour gérer les routes non trouvées (404)

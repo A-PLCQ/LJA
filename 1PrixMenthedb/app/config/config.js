@@ -23,12 +23,14 @@ requiredEnvVariables.forEach((key) => {
 
 module.exports = {
   email: {
+    host: process.env.EMAIL_HOST,  
+    port: process.env.EMAIL_PORT || 587,  
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
   jwt: {
     secret: process.env.JWT_SECRET,
-    refreshSecret: process.env.JWT_REFRESH_SECRET,
+    refreshSecret: process.env.JWT_REFRESH_SECRET, 
   },
   db: {
     host: process.env.DB_HOST,

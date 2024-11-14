@@ -1,4 +1,3 @@
-// Users.js - Définition du modèle en tant que fonction
 module.exports = (sequelize, DataTypes) => {
   const Users = sequelize.define('Users', {
     id_utilisateur: {
@@ -22,6 +21,10 @@ module.exports = (sequelize, DataTypes) => {
         isEmail: true,
       },
     },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },    
     mot_de_passe: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -33,6 +36,13 @@ module.exports = (sequelize, DataTypes) => {
     adresse: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    siret: {
+      type: DataTypes.STRING(14),
+      allowNull: true,
+      validate: {
+        is: /^[0-9]{14}$/, // Validation pour s'assurer que le SIRET est constitué de 14 chiffres
+      },
     },
     role: {
       type: DataTypes.ENUM('user', 'manager', 'admin'),

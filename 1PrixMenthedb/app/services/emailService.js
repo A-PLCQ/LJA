@@ -1,74 +1,72 @@
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+// emailService.js - Service de gestion des emails
 
+const nodemailer = require('nodemailer');
+const config = require('../config/config');
+const logger = require('../config/logger');
+
+// Initialisation de nodemailer avec SMTP
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_PORT === '465',
+  host: config.email.host,  // Utiliser l'hôte configuré
+  port: config.email.port,  // Utiliser le port configuré
+  secure: config.email.port === 465, // true pour SSL (port 465), false pour TLS (port 587)
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: process.env.NODE_ENV !== 'development',
+    user: config.email.user,
+    pass: config.email.pass,
   },
 });
 
-// Fonction pour créer un template d'email en fonction du type
-const createEmailTemplate = (type, code) => {
-  let subject = '';
-  let text = '';
-  let html = '';
-
-  switch (type) {
-    case 'reset':
-      subject = 'Réinitialisation de votre mot de passe';
-      text = `Votre code de réinitialisation est : ${code}. Ce code est valide pour une durée limitée.`;
-      html = `<p>Votre code de réinitialisation est : <b>${code}</b></p><p>Ce code est valide pour une durée limitée.</p>`;
-      break;
-
-    case 'verification':
-      subject = 'Vérification de votre compte';
-      text = `Votre code de vérification est : ${code}. Ce code est valide pour une durée limitée.`;
-      html = `<p>Votre code de vérification est : <b>${code}</b></p><p>Ce code est valide pour une durée limitée.</p>`;
-      break;
-
-    default:
-      throw new Error('Type d\'email non supporté');
-  }
-
-  return { subject, text, html };
-};
-
-// Fonction générique pour envoyer un email
-const sendEmail = async (to, subject, text, html) => {
+// Envoyer un email de réinitialisation de mot de passe
+const sendResetEmail = async (userEmail, resetCode) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to,
-    subject,
-    text,
-    html,
+    from: '"Support E-Commerce" <support@example.com>',
+    to: userEmail,
+    subject: 'Réinitialisation de votre mot de passe',
+    text: `Bonjour,
+
+Vous avez demandé à réinitialiser votre mot de passe. Voici votre code de réinitialisation : ${resetCode}
+
+Ce code est valable pendant 15 minutes.
+
+Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email.
+
+Merci,
+L'équipe Support E-Commerce.`,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Email envoyé à : ${to} | Sujet : ${subject}`);
+    logger.info(`Email de réinitialisation envoyé à ${userEmail}`);
   } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'email :', error);
-    throw new Error(`L'email n'a pas pu être envoyé à ${to} : ${error.message}`);
+    logger.error(`Erreur lors de l'envoi de l'email de réinitialisation à ${userEmail}: ${error.message}`);
+    throw new Error("Impossible d'envoyer l'email de réinitialisation");
   }
 };
 
-// Fonction pour envoyer un email de réinitialisation de mot de passe
-const sendResetEmail = async (email, resetCode) => {
-  const { subject, text, html } = createEmailTemplate('reset', resetCode);
-  await sendEmail(email, subject, text, html);
-};
+// Envoyer un email de vérification après inscription
+const sendVerificationEmail = async (userEmail, verificationLink) => {
+  const mailOptions = {
+    from: '"Support E-Commerce" <support@example.com>',
+    to: userEmail,
+    subject: 'Vérifiez votre adresse email',
+    text: `Bonjour,
 
-// Fonction pour envoyer un email de vérification d’inscription
-const sendVerificationEmail = async (email, verificationCode) => {
-  const { subject, text, html } = createEmailTemplate('verification', verificationCode);
-  await sendEmail(email, subject, text, html);
+Merci de vous être inscrit sur notre site. Pour vérifier votre adresse email, cliquez sur le lien ci-dessous :
+
+${verificationLink}
+
+Ce lien est valable pendant 24 heures.
+
+Merci,
+L'équipe Support E-Commerce.`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    logger.info(`Email de vérification envoyé à ${userEmail}`);
+  } catch (error) {
+    logger.error(`Erreur lors de l'envoi de l'email de vérification à ${userEmail}: ${error.message}`);
+    throw new Error("Impossible d'envoyer l'email de vérification");
+  }
 };
 
 module.exports = {
