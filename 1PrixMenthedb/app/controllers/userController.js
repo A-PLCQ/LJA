@@ -1,18 +1,19 @@
+
 // userController.js - Contrôleur des utilisateurs
 const { sequelize } = require('../models'); // Import de l'instance Sequelize
 const authService = require('../services/authService');
 const emailService = require('../services/emailService');
 const moment = require('moment-timezone');
-const { User, RefreshTokens } = require('../models');
+const { Users, RefreshTokens } = require('../models');
 
 // Inscription d'un nouvel utilisateur
 const registerUser = async (req, res) => {
-  const t = await sequelize.transaction(); // Utilisation de l'instance importée de Sequelize
+  const t = await sequelize.transaction();
   try {
     const { email, mot_de_passe, nom, prenom, telephone, adresse, siret } = req.body;
 
     // Vérifier si l'utilisateur existe déjà
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await Users.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'Un utilisateur avec cet email existe déjà.' });
     }
@@ -21,29 +22,27 @@ const registerUser = async (req, res) => {
     const hashedPassword = await authService.hashPassword(mot_de_passe);
 
     // Créer un nouvel utilisateur dans une transaction
-    const user = await User.create({ email, mot_de_passe: hashedPassword, nom, prenom, telephone, adresse, siret }, { transaction: t });
+    const user = await Users.create({ email, mot_de_passe: hashedPassword, nom, prenom, telephone, adresse, siret }, { transaction: t });
 
     // Envoyer un email de vérification
-    const verificationLink = `http://localhost:5005/users/verify?email=${user.email}&code=${user.id_utilisateur}`;
+    const verificationLink = `http://localhost:5005/users/verify?email=${user.email}&code=${user.id}`;
     await emailService.sendVerificationEmail(user.email, verificationLink);
 
     // Valider la transaction si tout s'est bien passé
     await t.commit();
     res.status(201).json({ message: 'Utilisateur créé. Vérifiez votre email.' });
   } catch (error) {
-    // Annuler la transaction en cas d'erreur
     await t.rollback();
     res.status(500).json({ message: "Erreur lors de la création de l'utilisateur.", error: error.message });
   }
 };
-
 
 const verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.query;
 
     // Chercher l'utilisateur par email et vérifier le code
-    const user = await User.findOne({ where: { email, id_utilisateur: code } });
+    const user = await Users.findOne({ where: { email, id: code } });
     if (!user) {
       return res.status(400).json({ message: "Lien de vérification invalide ou utilisateur introuvable." });
     }
@@ -64,7 +63,7 @@ const loginUser = async (req, res) => {
     const { email, mot_de_passe } = req.body;
 
     // Chercher l'utilisateur
-    const user = await User.findOne({ where: { email } });
+    const user = await Users.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect.' });
     }
@@ -94,7 +93,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-
 // Déconnexion utilisateur
 const logoutUser = async (req, res) => {
   try {
@@ -109,15 +107,15 @@ const logoutUser = async (req, res) => {
 // Obtenir le profil de l'utilisateur
 const getUserProfile = async (req, res) => {
   try {
-      const user = await User.findByPk(req.user.id_utilisateur, {
-          attributes: ['nom', 'prenom', 'email', 'adresse', 'siret']
-      });
-      if (!user) {
-          return res.status(404).json({ message: 'Utilisateur non trouvé.' });
-      }
-      res.status(200).json(user);
+    const user = await Users.findByPk(req.user.id, {
+      attributes: ['nom', 'prenom', 'email', 'adresse', 'siret']
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+    }
+    res.status(200).json(user);
   } catch (error) {
-      res.status(500).json({ message: 'Erreur lors de la récupération du profil utilisateur.', error: error.message });
+    res.status(500).json({ message: 'Erreur lors de la récupération du profil utilisateur.', error: error.message });
   }
 };
 
@@ -125,12 +123,12 @@ const getUserProfile = async (req, res) => {
 const updateUserProfile = async (req, res) => {
   try {
     const { nom, prenom, telephone, adresse, email } = req.body;
-    const user = await User.findByPk(req.user.id_utilisateur);
+    const user = await Users.findByPk(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé.' });
     }
     if (email && email !== user.email) {
-      const existingUser = await User.findOne({ where: { email } });
+      const existingUser = await Users.findOne({ where: { email } });
       if (existingUser) {
         return res.status(400).json({ message: 'Un utilisateur avec cet email existe déjà.' });
       }
@@ -148,12 +146,11 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-
 // Supprimer un utilisateur
 const deleteUser = async (req, res) => {
   try {
     const { mot_de_passe } = req.body;
-    const user = await User.findByPk(req.user.id_utilisateur);
+    const user = await Users.findByPk(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé.' });
     }
@@ -175,7 +172,7 @@ const deleteUser = async (req, res) => {
 const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const user = await Users.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé.' });
     }
@@ -196,7 +193,7 @@ const requestPasswordReset = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { email, resetCode, newPassword } = req.body;
-    const user = await User.findOne({ where: { email, reset_code: resetCode } });
+    const user = await Users.findOne({ where: { email, reset_code: resetCode } });
     if (!user || user.reset_code_expiry < new Date()) {
       return res.status(400).json({ message: 'Code de réinitialisation invalide ou expiré.' });
     }

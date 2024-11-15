@@ -31,22 +31,22 @@ module.exports = (sequelize, DataTypes) => {
     },
     weight_kg: {
       type: DataTypes.DECIMAL(5, 2),
-      allowNull: false,
+      allowNull: true, // Optionnel si non disponible
       validate: {
         min: 0,
       },
     },
     print_speed_ppm: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true, // Optionnel si non applicable
     },
     scan_speed_ipm: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     copy_volume_per_month: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     color_support: {
       type: DataTypes.BOOLEAN,
@@ -73,23 +73,18 @@ module.exports = (sequelize, DataTypes) => {
     },
     short_description: {
       type: DataTypes.TEXT,
+      validate: {
+        len: [0, 500],
+      },
     },
     detailed_description: {
       type: DataTypes.TEXT,
     },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: sequelize.Sequelize.NOW,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: sequelize.Sequelize.NOW,
-    },
   }, {
     tableName: 'printers',
     timestamps: true,
-    updatedAt: 'updated_at', // Use the custom field for updated timestamp
-    createdAt: 'created_at', // Use the custom field for created timestamp
+    updatedAt: 'updated_at',
+    createdAt: 'created_at',
     indexes: [
       {
         name: 'idx_printer_brand_model',
@@ -101,8 +96,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     ],
     hooks: {
-      beforeSave: (printer, options) => {
-        // Ensure the stock is non-negative before saving
+      beforeSave: (printer) => {
         if (printer.stock < 0) {
           throw new Error('Stock cannot be negative.');
         }

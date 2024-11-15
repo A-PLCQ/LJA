@@ -1,4 +1,3 @@
-// Centralized module export format for CompatiblePrinters model
 module.exports = (sequelize, DataTypes) => {
   const CompatiblePrinters = sequelize.define('CompatiblePrinters', {
     id_consumable: {
@@ -8,7 +7,6 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id_consumable',
       },
       allowNull: false,
-      onDelete: 'CASCADE',
     },
     id_printer: {
       type: DataTypes.INTEGER,
@@ -17,18 +15,18 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id_printer',
       },
       allowNull: false,
-      onDelete: 'CASCADE',
     },
   }, {
     tableName: 'compatible_printers',
-    timestamps: false,
+    timestamps: false, // Pas de suivi des modifications
     indexes: [
       {
         name: 'idx_compatible_printers',
         fields: ['id_printer', 'id_consumable'],
+        unique: true, // Garantit qu'une imprimante et un consommable ne peuvent pas être dupliqués
       },
     ],
   });
-
+  
   return CompatiblePrinters;
 };

@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Users = sequelize.define('Users', {
-    id_utilisateur: {
+    id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
@@ -18,20 +18,26 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       unique: true,
       validate: {
-        isEmail: true,
+        isEmail: true, 
       },
     },
     isVerified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-    },    
+    },
     mot_de_passe: {
       type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        len: [8, 100], // Ajout de validation de longueur
+      },
     },
     telephone: {
       type: DataTypes.STRING,
       allowNull: true,
+      validate: {
+        is: /^[0-9+]{9,15}$/, // Validation pour numéro de téléphone
+      },
     },
     adresse: {
       type: DataTypes.STRING,
@@ -41,7 +47,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(14),
       allowNull: true,
       validate: {
-        is: /^[0-9]{14}$/, // Validation pour s'assurer que le SIRET est constitué de 14 chiffres
+        is: /^[0-9]{14}$/,
       },
     },
     role: {
@@ -62,8 +68,7 @@ module.exports = (sequelize, DataTypes) => {
     },
   }, {
     tableName: 'users',
-    timestamps: false,
+    timestamps: true,
   });
-
   return Users;
 };

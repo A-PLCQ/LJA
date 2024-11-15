@@ -1,4 +1,3 @@
-// Centralized module export format for Payments model
 module.exports = (sequelize, DataTypes) => {
   const Payments = sequelize.define('Payments', {
     id_paiement: {
@@ -8,28 +7,35 @@ module.exports = (sequelize, DataTypes) => {
     },
     id_commande: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: false, // Mise à jour : Une commande est toujours nécessaire
       references: {
-        model: 'Orders',
+        model: 'Orders', // La table Orders doit avoir un champ id_commande
         key: 'id_commande',
       },
       onDelete: 'CASCADE',
     },
     montant: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
+      allowNull: false,
+      validate: {
+        min: 0, // Validation : Le montant doit être positif
+      },
     },
     methode_paiement: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
+      validate: {
+        len: [3, 50], // Longueur minimale et maximale
+      },
     },
     date_paiement: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
     statut: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      type: DataTypes.ENUM('en attente', 'validé', 'échec'),
+      allowNull: false,
+      defaultValue: 'en attente', // Statut par défaut
     },
     transaction_id: {
       type: DataTypes.STRING,
@@ -38,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
     },
   }, {
     tableName: 'payments',
-    timestamps: false,
+    timestamps: true, // Active automatiquement createdAt et updatedAt
     indexes: [
       {
         name: 'idx_id_commande_payments',
@@ -54,6 +60,5 @@ module.exports = (sequelize, DataTypes) => {
       },
     ],
   });
-
   return Payments;
 };

@@ -1,4 +1,3 @@
-// Centralized module export format for Images model
 module.exports = (sequelize, DataTypes) => {
   const Images = sequelize.define('Images', {
     id_image: {
@@ -13,7 +12,6 @@ module.exports = (sequelize, DataTypes) => {
         model: 'Printers',
         key: 'id_printer',
       },
-      onDelete: 'CASCADE',
     },
     id_consumable: {
       type: DataTypes.INTEGER,
@@ -22,27 +20,31 @@ module.exports = (sequelize, DataTypes) => {
         model: 'Consumables',
         key: 'id_consumable',
       },
-      onDelete: 'CASCADE',
     },
     url: {
       type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        isUrl: true, // Validation pour s'assurer que le champ est une URL valide
+      },
     },
     is_primary: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
   }, {
     tableName: 'images',
-    timestamps: false,
+    timestamps: true, // Sequelize gère createdAt et updatedAt
+    indexes: [
+      {
+        name: 'idx_id_printer_images',
+        fields: ['id_printer'],
+      },
+      {
+        name: 'idx_id_consumable_images',
+        fields: ['id_consumable'],
+      },
+    ],
     validate: {
       eitherPrinterOrConsumable() {
         if ((this.id_printer && this.id_consumable) || (!this.id_printer && !this.id_consumable)) {

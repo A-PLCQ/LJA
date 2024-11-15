@@ -1,4 +1,3 @@
-// Centralized module export format for OrderItems model
 module.exports = (sequelize, DataTypes) => {
   const OrderItems = sequelize.define('OrderItems', {
     id_commande: {
@@ -8,7 +7,6 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id_commande',
       },
       allowNull: false,
-      onDelete: 'CASCADE',
     },
     id_printer: {
       type: DataTypes.INTEGER,
@@ -17,7 +15,6 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id_printer',
       },
       allowNull: true,
-      onDelete: 'CASCADE',
     },
     id_consumable: {
       type: DataTypes.INTEGER,
@@ -26,15 +23,31 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id_consumable',
       },
       allowNull: true,
-      onDelete: 'CASCADE',
     },
     quantite: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      validate: {
+        min: 1, // Validation pour éviter une quantité inférieure à 1
+      },
     },
   }, {
     tableName: 'order_items',
     timestamps: false,
+    indexes: [
+      {
+        name: 'idx_id_commande',
+        fields: ['id_commande'],
+      },
+      {
+        name: 'idx_id_printer',
+        fields: ['id_printer'],
+      },
+      {
+        name: 'idx_id_consumable',
+        fields: ['id_consumable'],
+      },
+    ],
     validate: {
       eitherPrinterOrConsumable() {
         if ((this.id_printer && this.id_consumable) || (!this.id_printer && !this.id_consumable)) {

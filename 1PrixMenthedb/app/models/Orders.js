@@ -1,4 +1,3 @@
-// Centralized module export format for Orders model
 module.exports = (sequelize, DataTypes) => {
   const Orders = sequelize.define('Orders', {
     id_commande: {
@@ -6,53 +5,38 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true,
       primaryKey: true,
     },
-    id_utilisateur: {
+    user_id: { // Mise à jour ici pour correspondre à la clé primaire de Users
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: false,
       references: {
         model: 'Users',
-        key: 'id_utilisateur',
+        key: 'id',
       },
       onDelete: 'CASCADE',
     },
     montant_total: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
+      allowNull: false,
+      validate: {
+        min: 0,
+      },
     },
     status: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    date_commande: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
+      type: DataTypes.ENUM('en attente', 'confirmé', 'livré', 'annulé'),
+      allowNull: false,
+      defaultValue: 'en attente',
     },
     adresse_livraison: {
       type: DataTypes.STRING,
       allowNull: true,
+      validate: {
+        len: [10, 255],
+      },
     },
   }, {
     tableName: 'orders',
-    timestamps: false,
-    indexes: [
-      {
-        name: 'idx_id_utilisateur_orders',
-        fields: ['id_utilisateur'],
-      },
-      {
-        name: 'idx_status_orders',
-        fields: ['status'],
-      },
-      {
-        name: 'idx_date_commande_orders',
-        fields: ['date_commande'],
-      },
-    ],
+    timestamps: true,
   });
-
+  
   return Orders;
 };

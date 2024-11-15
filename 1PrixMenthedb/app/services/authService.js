@@ -8,7 +8,7 @@ const config = require('../config/config');
 // Générer un token d'accès
 const generateAccessToken = (user) => {
   return jwt.sign(
-    { id_utilisateur: user.id_utilisateur, role: user.role, iat: Math.floor(Date.now() / 1000) },
+    { id: user.id, role: user.role, iat: Math.floor(Date.now() / 1000) },
     config.jwt.secret,
     { expiresIn: '5m', algorithm: 'HS256', audience: 'ecommerce_app', issuer: 'auth_service' }
   );
@@ -17,13 +17,13 @@ const generateAccessToken = (user) => {
 // Générer un token de rafraîchissement
 const generateRefreshToken = async (user, ipAddress, deviceInfo) => {
   const refreshToken = jwt.sign(
-    { id_utilisateur: user.id_utilisateur, iat: Math.floor(Date.now() / 1000) },
+    { id: user.id, iat: Math.floor(Date.now() / 1000) },
     config.jwt.refreshSecret,
     { expiresIn: '7d', audience: 'ecommerce_app', issuer: 'auth_service' }
   );
 
   await RefreshTokens.create({
-    user_id: user.id_utilisateur,
+    user_id: user.id,
     token: refreshToken,
     expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     ip_address: ipAddress,
@@ -59,7 +59,7 @@ const verifyRefreshToken = async (token) => {
 // Rafraîchir un token d'accès
 const refreshAccessToken = async (refreshToken) => {
   const decoded = await verifyRefreshToken(refreshToken);
-  const user = await User.findByPk(decoded.id_utilisateur);
+  const user = await User.findByPk(decoded.id);
   if (!user) {
     throw new Error('Utilisateur non trouvé');
   }

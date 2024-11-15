@@ -1,78 +1,124 @@
-// Import Sequelize and initialize the connection instance
 const { sequelize } = require('../config/db');
 const { DataTypes } = require('sequelize');
 
-// Initialisation des modèles en utilisant sequelize et DataTypes
-const UserModel = require('./Users');
+// Importation des modèles
+const UsersModel = require('./Users');
+const PrintersModel = require('./Printers');
+const ConsumablesModel = require('./Consumables');
 const CartItemsModel = require('./CartItems');
 const CompatiblePrintersModel = require('./CompatiblePrinters');
-const ConsumablesModel = require('./Consumables');
 const ImagesModel = require('./Images');
-const OrderItemsModel = require('./OrderItems');
 const OrdersModel = require('./Orders');
+const OrderItemsModel = require('./OrderItems');
 const PaymentsModel = require('./Payments');
-const PrintersModel = require('./Printers');
 const RefreshTokensModel = require('./RefreshTokens');
 
-// Initialisation de chaque modèle avec sequelize et DataTypes
-const User = UserModel(sequelize, DataTypes);
+// Initialisation des modèles
+const Users = UsersModel(sequelize, DataTypes);
+const Printers = PrintersModel(sequelize, DataTypes);
+const Consumables = ConsumablesModel(sequelize, DataTypes);
 const CartItems = CartItemsModel(sequelize, DataTypes);
 const CompatiblePrinters = CompatiblePrintersModel(sequelize, DataTypes);
-const Consumables = ConsumablesModel(sequelize, DataTypes);
 const Images = ImagesModel(sequelize, DataTypes);
-const OrderItems = OrderItemsModel(sequelize, DataTypes);
 const Orders = OrdersModel(sequelize, DataTypes);
+const OrderItems = OrderItemsModel(sequelize, DataTypes);
 const Payments = PaymentsModel(sequelize, DataTypes);
-const Printers = PrintersModel(sequelize, DataTypes);
 const RefreshTokens = RefreshTokensModel(sequelize, DataTypes);
 
-// Définir les associations entre les modèles
+// === Associations === //
+Users.hasMany(Orders, { foreignKey: 'user_id', as: 'orders' });
+Orders.belongsTo(Users, { foreignKey: 'user_id', as: 'user' });
 
-// User - Orders
-User.hasMany(Orders, { onDelete: 'CASCADE' });
-Orders.belongsTo(User);
+Users.hasMany(RefreshTokens, { foreignKey: 'user_id', as: 'tokens' });
+RefreshTokens.belongsTo(Users, { foreignKey: 'user_id', as: 'user' });
 
-// User - CartItems
-User.hasMany(CartItems, { onDelete: 'CASCADE' });
-CartItems.belongsTo(User);
+Users.hasMany(CartItems, { foreignKey: 'user_id', as: 'cartItems' });
+CartItems.belongsTo(Users, { foreignKey: 'user_id', as: 'user' });
 
-// CartItems - Printers & Consumables
-Printers.hasMany(CartItems, { onDelete: 'CASCADE' });
-CartItems.belongsTo(Printers);
+Printers.hasMany(Images, { foreignKey: 'id_printer', as: 'images' }); 
+Images.belongsTo(Printers, { foreignKey: 'id_printer', as: 'images' }); 
 
-Consumables.hasMany(CartItems, { onDelete: 'CASCADE' });
-CartItems.belongsTo(Consumables);
+Printers.hasMany(CartItems, { foreignKey: 'id_printer', as: 'cartItems' });
+CartItems.belongsTo(Printers, { foreignKey: 'id_printer', as: 'printer' });
 
-// Orders - OrderItems
-Orders.hasMany(OrderItems, { onDelete: 'CASCADE' });
-OrderItems.belongsTo(Orders);
+Printers.belongsToMany(Consumables, {
+  through: CompatiblePrinters,
+  foreignKey: 'id_printer',
+  otherKey: 'id_consumable',
+  as: 'compatibleConsumables',
+});
 
-// Printers - CompatiblePrinters
-Printers.hasMany(CompatiblePrinters, { onDelete: 'CASCADE' });
-CompatiblePrinters.belongsTo(Printers);
+Consumables.belongsToMany(Printers, {
+  through: CompatiblePrinters,
+  foreignKey: 'id_consumable',
+  otherKey: 'id_printer',
+  as: 'compatiblePrinters',
+});
 
-Consumables.hasMany(CompatiblePrinters, { onDelete: 'CASCADE' });
-CompatiblePrinters.belongsTo(Consumables);
+Consumables.hasMany(CartItems, { foreignKey: 'id_consumable', as: 'cartItems' });
+CartItems.belongsTo(Consumables, { foreignKey: 'id_consumable', as: 'consumable' });
 
-// Orders - Payments
-Orders.hasMany(Payments, { onDelete: 'CASCADE' });
-Payments.belongsTo(Orders);
+Orders.hasMany(OrderItems, { foreignKey: 'id_commande', as: 'items' });
+OrderItems.belongsTo(Orders, { foreignKey: 'id_commande', as: 'order' });
 
-// RefreshTokens - User
-User.hasMany(RefreshTokens, { onDelete: 'CASCADE' });
-RefreshTokens.belongsTo(User);
+Orders.hasMany(Payments, { foreignKey: 'id_commande', as: 'payments' });
+Payments.belongsTo(Orders, { foreignKey: 'id_commande', as: 'order' });
 
-// Exports des modèles et de l'instance sequelize
+// === Initialisation des modèles dans l'ordre === //
+const initializeDatabase = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Connexion à la base de données réussie.');
+
+    // Synchronisation séquentielle
+    await Users.sync();
+    console.log('Table Users synchronisée.');
+
+    await Printers.sync();
+    console.log('Table Printers synchronisée.');
+
+    await Consumables.sync();
+    console.log('Table Consumables synchronisée.');
+
+    await CompatiblePrinters.sync();
+    console.log('Table CompatiblePrinters synchronisée.');
+
+    await Orders.sync();
+    console.log('Table Orders synchronisée.');
+
+    await CartItems.sync();
+    console.log('Table CartItems synchronisée.');
+
+    await OrderItems.sync();
+    console.log('Table OrderItems synchronisée.');
+
+    await Payments.sync();
+    console.log('Table Payments synchronisée.');
+
+    await RefreshTokens.sync();
+    console.log('Table RefreshTokens synchronisée.');
+
+    await Images.sync();
+    console.log('Table Images synchronisée.');
+
+    console.log('Synchronisation des modèles réussie.');
+  } catch (error) {
+    console.error('Erreur lors de la synchronisation avec la base de données :', error);
+  }
+};
+
+initializeDatabase();
+
 module.exports = {
-  User,
+  sequelize,
+  Users,
+  Printers,
+  Consumables,
   CartItems,
   CompatiblePrinters,
-  Consumables,
   Images,
-  OrderItems,
   Orders,
+  OrderItems,
   Payments,
-  Printers,
   RefreshTokens,
-  sequelize,
 };

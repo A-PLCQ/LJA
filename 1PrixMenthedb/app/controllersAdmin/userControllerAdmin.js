@@ -6,7 +6,7 @@ const { HTTP_STATUS } = require('../config/constants');
 // Récupérer tous les utilisateurs
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll({ attributes: ['id_utilisateur', 'nom', 'prenom', 'email', 'role', 'isVerified'] });
+    const users = await User.findAll({ attributes: ['id', 'nom', 'prenom', 'email', 'role', 'isVerified'] });
     res.status(HTTP_STATUS.OK).json(users);
   } catch (error) {
     res.status(HTTP_STATUS.SERVER_ERROR).json({ message: 'Erreur lors de la récupération des utilisateurs.', error: error.message });
@@ -17,10 +17,12 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.findByPk(id, { attributes: [
-      'id_utilisateur', 'nom', 'prenom', 'email', 'role', 'isVerified',
-      'telephone', 'adresse', 'siret', 'last_login', 'reset_code', 'reset_code_expiry'
-    ] });
+    const user = await User.findByPk(id, {
+      attributes: [
+        'id', 'nom', 'prenom', 'email', 'role', 'isVerified',
+        'telephone', 'adresse', 'siret', 'last_login', 'reset_code', 'reset_code_expiry'
+      ]
+    });
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Utilisateur non trouvé.' });
     }

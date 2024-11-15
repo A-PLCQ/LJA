@@ -23,19 +23,19 @@ const authMiddleware = async (req, res, next) => {
             issuer: 'auth_service',
         });
 
-        if (!decoded || !decoded.id_utilisateur) {
+        if (!decoded || !decoded.id) {
             logger.warn('Erreur de décodage du token');
             return res.status(401).json({ message: 'Accès non autorisé. Token invalide.' });
         }
 
-        const user = await User.findByPk(decoded.id_utilisateur);
+        const user = await User.findByPk(decoded.id);
         if (!user) {
             logger.warn('Utilisateur non trouvé');
             return res.status(401).json({ message: 'Utilisateur non trouvé.' });
         }
 
         req.user = user;
-        logger.info('Utilisateur authentifié avec succès', { userId: user.id_utilisateur });
+        logger.info('Utilisateur authentifié avec succès', { userId: user.id });
         next();
     } catch (error) {
         logger.error('Erreur du middleware auth:', { message: error.message });
@@ -52,11 +52,11 @@ const roleMiddleware = (requiredRoles) => {
         }
 
         if (!requiredRoles.includes(req.user.role)) {
-            logger.warn('Accès refusé. Permissions insuffisantes', { userId: req.user.id_utilisateur, role: req.user.role });
+            logger.warn('Accès refusé. Permissions insuffisantes', { userId: req.user.id, role: req.user.role });
             return res.status(403).json({ message: 'Accès refusé. Permissions insuffisantes.' });
         }
 
-        logger.info('Utilisateur autorisé à accéder à cette route', { userId: req.user.id_utilisateur, role: req.user.role });
+        logger.info('Utilisateur autorisé à accéder à cette route', { userId: req.user.id, role: req.user.role });
         next();
     };
 };

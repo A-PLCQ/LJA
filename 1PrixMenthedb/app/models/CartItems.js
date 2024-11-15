@@ -1,4 +1,3 @@
-// Centralized module export format for CartItems model
 module.exports = (sequelize, DataTypes) => {
   const CartItems = sequelize.define('CartItems', {
     id_cart_item: {
@@ -10,14 +9,13 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    id_utilisateur: {
+    user_id: {
       type: DataTypes.INTEGER,
       references: {
-        model: 'Users',
-        key: 'id_utilisateur',
+        model: 'Users', // Vérifie que le modèle "Users" est bien défini comme "User" dans index.js
+        key: 'id',
       },
       allowNull: true,
-      onDelete: 'CASCADE',
     },
     id_printer: {
       type: DataTypes.INTEGER,
@@ -26,7 +24,6 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id_printer',
       },
       allowNull: true,
-      onDelete: 'CASCADE',
     },
     id_consumable: {
       type: DataTypes.INTEGER,
@@ -35,7 +32,6 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id_consumable',
       },
       allowNull: true,
-      onDelete: 'CASCADE',
     },
     quantite: {
       type: DataTypes.INTEGER,
@@ -58,14 +54,22 @@ module.exports = (sequelize, DataTypes) => {
     },
   }, {
     tableName: 'cart_items',
-    timestamps: false,
+    timestamps: true,
     indexes: [
       {
-        name: 'idx_id_utilisateur_cart_items',
-        fields: ['id_utilisateur'],
+        name: 'idx_user_id_cart_items',
+        fields: ['user_id'],
+      },
+      {
+        name: 'idx_id_printer_cart_items',
+        fields: ['id_printer'],
+      },
+      {
+        name: 'idx_id_consumable_cart_items',
+        fields: ['id_consumable'],
       },
     ],
   });
-
+  
   return CartItems;
 };
