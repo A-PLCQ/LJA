@@ -58,6 +58,9 @@ Consumables.belongsToMany(Printers, {
 Consumables.hasMany(CartItems, { foreignKey: 'id_consumable', as: 'cartItems' });
 CartItems.belongsTo(Consumables, { foreignKey: 'id_consumable', as: 'consumable' });
 
+Consumables.hasMany(Images, { foreignKey: 'id_consumable', as: 'images' });
+Images.belongsTo(Consumables, { foreignKey: 'id_consumable', as: 'consumable' });
+
 Orders.hasMany(OrderItems, { foreignKey: 'id_commande', as: 'items' });
 OrderItems.belongsTo(Orders, { foreignKey: 'id_commande', as: 'order' });
 

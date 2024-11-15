@@ -25,7 +25,7 @@ const getPrinters = async (req, res) => {
           // Normalisation du chemin d'accès
           image.url = image.url
             .replace(/\\/g, '/') // Remplace les backslashes par des slashes
-            .replace(/ /g, '-'); // Remplace les espaces par des tirets
+            .replace(/ /g, '%20');// Remplace les espaces par des tirets
         });
       }
     });

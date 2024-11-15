@@ -14,8 +14,8 @@ const adminRoutes = require('./app/routes/adminRoutes');
 const userRoutes = require('./app/routes/userRoutes');
 const imageRoutes = require('./app/routes/imageRoutes');
 const printerRoutes = require('./app/routes/printerRoutes');
-//const consumableRoutes = require('./app/routes/consumableRoutes');
-//const compatiblesRoutes = require('./app/routes/compatibleRoutes');
+const consumableRoutes = require('./app/routes/consumableRoutes');
+const compatiblesRoutes = require('./app/routes/compatibleRoutes');
 
 // Importation des middlewares
 const errorHandlerMiddleware = require('./app/middlewares/errorHandler'); 
@@ -49,8 +49,8 @@ app.use('/admin', adminRoutes);
 app.use('/users', userRoutes); 
 app.use('/images', imageRoutes); 
 app.use('/printer', printerRoutes); 
-//app.use('/consumable', consumableRoutes); a faire 
-//app.use('/compatible', compatiblesRoutes); a faire 
+app.use('/consumable', consumableRoutes);
+app.use('/compatibles', compatiblesRoutes); 
 
 
 // Middleware pour gérer les routes non trouvées (404)
