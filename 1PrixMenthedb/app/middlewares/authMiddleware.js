@@ -1,67 +1,90 @@
-// authMiddleware.js - Middleware d'authentification avec gestion des rôles
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
-const logger = require('../config/logger'); // Utilisation de Winston pour la journalisation
+const { Users } = require('../models'); // Vérifie que l'import est correct
+const logger = require('../config/logger'); // Winston pour la journalisation
+const { UnauthorizedError } = require('../helpers/customErrors');
 
-// Middleware d'authentification de base avec des améliorations de sécurité
+// Middleware de validation du token d'accès
 const authMiddleware = async (req, res, next) => {
-    try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            logger.warn('Token manquant ou mauvais format');
-            return res.status(401).json({ message: 'Accès non autorisé. Token manquant.' });
-        }
-
-        const token = authHeader.split(' ')[1];
-        if (!token || typeof token !== 'string' || token.length < 20) {
-            logger.warn('Token invalide ou corrompu');
-            return res.status(401).json({ message: 'Accès non autorisé. Token invalide.' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET, {
-            audience: 'ecommerce_app',
-            issuer: 'auth_service',
-        });
-
-        if (!decoded || !decoded.id) {
-            logger.warn('Erreur de décodage du token');
-            return res.status(401).json({ message: 'Accès non autorisé. Token invalide.' });
-        }
-
-        const user = await User.findByPk(decoded.id);
-        if (!user) {
-            logger.warn('Utilisateur non trouvé');
-            return res.status(401).json({ message: 'Utilisateur non trouvé.' });
-        }
-
-        req.user = user;
-        logger.info('Utilisateur authentifié avec succès', { userId: user.id });
-        next();
-    } catch (error) {
-        logger.error('Erreur du middleware auth:', { message: error.message });
-        return res.status(401).json({ message: 'Accès non autorisé. Token invalide ou expiré.' });
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn('En-tête Authorization manquant ou mal formé.');
+      return res.status(401).json({ message: 'Token manquant ou invalide.' });
     }
+
+    // Extraction du token
+    const token = authHeader.split(' ')[1];
+    logger.debug(`Token reçu dans Authorization : ${token}`);
+
+    // Décodage sans vérification pour diagnostic
+    const decodedWithoutVerify = jwt.decode(token, { complete: true });
+    logger.debug(`Payload décodé sans vérification : ${JSON.stringify(decodedWithoutVerify)}`);
+
+    // Vérification du token avec JWT_SECRET
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      audience: 'ecommerce_app',
+      issuer: 'auth_service',
+    });
+
+    logger.info(`Token vérifié avec succès pour l'utilisateur ${decoded.id}`);
+
+    // Charger l'utilisateur depuis la base de données
+    const user = await Users.findByPk(decoded.id);
+    if (!user) {
+      logger.warn(`Utilisateur introuvable pour l'ID ${decoded.id}`);
+      return res.status(401).json({ message: 'Utilisateur introuvable.' });
+    }
+
+    // Ajouter l'utilisateur à la requête pour une utilisation ultérieure
+    req.user = user;
+    logger.info(`Utilisateur authentifié : ${user.id}, rôle : ${user.role}`);
+    next();
+  } catch (error) {
+    // Gestion des erreurs spécifiques JWT
+    if (error.name === 'TokenExpiredError') {
+      logger.warn('Token expiré.');
+      return res.status(401).json({ message: 'Votre session a expiré. Veuillez vous reconnecter.' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      logger.error('Signature du token invalide.');
+      return res.status(401).json({ message: 'Token invalide ou modifié.' });
+    }
+    if (error instanceof UnauthorizedError) {
+      return res.status(401).json({ message: error.message });
+    }
+
+    // Gestion des erreurs inattendues
+    logger.error(`Erreur dans authMiddleware : ${error.message}`);
+    return res.status(500).json({ message: 'Erreur interne du serveur.' });
+  }
 };
 
-// Middleware de vérification des rôles avec des améliorations de sécurité
+// Middleware de vérification des rôles
 const roleMiddleware = (requiredRoles) => {
-    return (req, res, next) => {
-        if (!req.user) {
-            logger.warn('Accès non autorisé. Utilisateur non authentifié.');
-            return res.status(401).json({ message: 'Accès non autorisé. Utilisateur non authentifié.' });
-        }
+  return (req, res, next) => {
+    try {
+      if (!req.user) {
+        logger.warn('Accès non autorisé. Aucun utilisateur authentifié.');
+        return res.status(401).json({ message: 'Accès non autorisé. Veuillez vous connecter.' });
+      }
 
-        if (!requiredRoles.includes(req.user.role)) {
-            logger.warn('Accès refusé. Permissions insuffisantes', { userId: req.user.id, role: req.user.role });
-            return res.status(403).json({ message: 'Accès refusé. Permissions insuffisantes.' });
-        }
+      if (!requiredRoles.includes(req.user.role)) {
+        logger.warn(
+          `Permissions insuffisantes pour l'utilisateur ${req.user.id} (${req.user.role}). Rôles requis : ${requiredRoles}.`
+        );
+        return res.status(403).json({ message: 'Accès refusé. Permissions insuffisantes.' });
+      }
 
-        logger.info('Utilisateur autorisé à accéder à cette route', { userId: req.user.id, role: req.user.role });
-        next();
-    };
+      logger.info(`Utilisateur autorisé à accéder à cette ressource : ${req.user.id}`);
+      next();
+    } catch (error) {
+      logger.error(`Erreur dans roleMiddleware : ${error.message}`);
+      return res.status(500).json({ message: 'Erreur interne du serveur.' });
+    }
+  };
 };
 
 module.exports = {
-    authMiddleware,
-    roleMiddleware,
+  authMiddleware,
+  roleMiddleware,
 };

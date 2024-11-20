@@ -1,15 +1,19 @@
-// userRoutes.js - Définition des routes utilisateur
+// userRoutes.js
 
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 const userController = require('../controllers/userController');
-const { authMiddleware, roleMiddleware } = require('../middlewares/authMiddleware');
-const authRateLimiter = require('../middlewares/rateLimiterMiddleware'); // Importer le rate limiter spécifique à l'authentification
-const { userValidator, loginValidator, passwordChangeValidator, updateUserProfileValidator } = require('../validators/userValidator');
+const { authMiddleware } = require('../middlewares/authMiddleware');
+const {
+  updateUserProfileValidator,
+  deleteUserValidator,
+  requestPasswordResetValidator,
+  resetPasswordValidator
+} = require('../validators/userValidator');
 
 const router = express.Router();
 
-// Middleware de validation des champs (utilisé après chaque validator)
+// Middleware pour gérer les erreurs de validation
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -18,31 +22,19 @@ const validate = (req, res, next) => {
   next();
 };
 
-// Inscription utilisateur avec validation
-router.post('/register', userValidator, validate, userController.registerUser);
-
-// Verification de l'email d'inscription
-router.get('/verify', userController.verifyEmail);
-
-// Connexion utilisateur (avec limitation des tentatives et validation)
-router.post('/login', authRateLimiter, loginValidator, validate, userController.loginUser);
-
-// Déconnexion utilisateur
-router.post('/logout', authMiddleware, userController.logoutUser);
-
-// Obtenir le profil de l'utilisateur (doit être authentifié)
+// Obtenir le profil de l'utilisateur (aucune validation nécessaire ici)
 router.get('/profile', authMiddleware, userController.getUserProfile);
 
-// Mettre à jour le profil utilisateur avec validation de l'email (doit être authentifié)
+// Mettre à jour le profil utilisateur
 router.put('/profile', authMiddleware, updateUserProfileValidator, validate, userController.updateUserProfile);
 
-// Supprimer un utilisateur (doit être authentifié et réservé aux administrateurs)
-router.delete('/delete', authMiddleware, userController.deleteUser);
+// Supprimer un utilisateur
+router.delete('/delete', authMiddleware, deleteUserValidator, validate, userController.deleteUser);
 
-// Demander la réinitialisation du mot de passe (limité en requêtes)
-router.post('/password-reset/request', authRateLimiter, userController.requestPasswordReset);
+// Demander la réinitialisation du mot de passe
+router.post('/password-reset/request', requestPasswordResetValidator, validate, userController.requestPasswordReset);
 
-// Réinitialiser le mot de passe avec validation
-router.post('/password-reset/reset', passwordChangeValidator, validate, userController.resetPassword);
+// Réinitialiser le mot de passe
+router.post('/password-reset/reset', resetPasswordValidator, validate, userController.resetPassword);
 
 module.exports = router;

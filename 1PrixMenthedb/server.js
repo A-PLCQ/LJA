@@ -16,6 +16,7 @@ const imageRoutes = require('./app/routes/imageRoutes');
 const printerRoutes = require('./app/routes/printerRoutes');
 const consumableRoutes = require('./app/routes/consumableRoutes');
 const compatiblesRoutes = require('./app/routes/compatibleRoutes');
+const cartRoutes = require('./app/routes/cartRoutes');
 
 // Importation des middlewares
 const errorHandlerMiddleware = require('./app/middlewares/errorHandler'); 
@@ -51,7 +52,7 @@ app.use('/images', imageRoutes);
 app.use('/printer', printerRoutes); 
 app.use('/consumable', consumableRoutes);
 app.use('/compatibles', compatiblesRoutes); 
-
+app.use('/cart', cartRoutes);
 
 // Middleware pour gérer les routes non trouvées (404)
 app.use((req, res, next) => {
