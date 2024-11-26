@@ -1,19 +1,17 @@
-import React from 'react';
-import { useState } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import React, { useState } from 'react';
 import AppRouter from './router';
-import Navbar from './components/Navbar';
+import Navbar from './components/common/Navbar';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
-    <Router>
-      <div className="App">
-        <Navbar isLoggedIn={isLoggedIn} />
+    <div className="App">
+      <Navbar isLoggedIn={isLoggedIn} />
+      <div style={{ padding: '75px 0px' }}>
         <AppRouter isLoggedIn={isLoggedIn} />
       </div>
-    </Router>
+    </div>
   );
 }
 

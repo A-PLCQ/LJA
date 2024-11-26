@@ -1,0 +1,117 @@
+.featured-products {
+    margin: 2rem auto;
+    padding: 2rem;
+    max-width: 1200px;
+    text-align: center;
+}
+
+.featured-products h2 {
+    font-family: 'Urbanist', sans-serif;
+    font-size: 2.6rem;
+    color: var(--noir-profond);
+    margin-bottom: 3rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+}
+
+.featured-products h2::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background-color: var(--rouge-principal);
+}
+
+.featured-products-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    justify-items: center;
+}
+
+.featured-product-card {
+    background-color: var(--blanc-pur);
+    border: 1px solid var(--gris-moyen);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-align: center;
+    max-width: 350px;
+}
+
+.featured-product-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.featured-product-image-wrapper {
+    overflow: hidden;
+    border-bottom: 1px solid var(--gris-moyen);
+    height: 220px;
+}
+
+.featured-product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.featured-product-card:hover .featured-product-image {
+    transform: scale(1.08);
+}
+
+.featured-product-card h3 {
+    font-family: 'Urbanist', sans-serif;
+    font-size: 1.8rem;
+    color: var(--noir-profond);
+    margin: 1rem 0;
+}
+
+.featured-product-card p {
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 1.4rem;
+    color: var(--gris-fonce);
+    margin: 0 1rem 1.5rem 1rem;
+}
+
+.featured-product-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-primary, .btn-secondary {
+    text-decoration: none;
+    padding: 0.8rem 1.8rem;
+    border-radius: 6px;
+    font-weight: bold;
+    font-family: 'Urbanist', sans-serif;
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--rouge-principal);
+    color: var(--blanc-pur);
+}
+
+.btn-primary:hover {
+    background-color: var(--gris-fonce);
+    transform: translateY(-3px);
+}
+
+.btn-secondary {
+    background-color: var(--gris-moyen);
+    color: var(--noir-profond);
+}
+
+.btn-secondary:hover {
+    background-color: var(--gris-sombre);
+    transform: translateY(-3px);
+}

@@ -30,9 +30,28 @@ const PORT = config.port || 5005; // Utiliser le port défini dans config.js
 app.set('trust proxy', 1);
 
 // Middlewares de sécurité
-app.use(helmet()); // Sécurise les headers HTTP
-app.use(cors());   // Active CORS pour permettre les requêtes cross-origin
+app.use(helmet({
+  contentSecurityPolicy: false, // Désactive la politique de sécurité de contenu qui pourrait bloquer les ressources
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Permet le chargement des ressources provenant d'origines différentes
+}));
 
+// Configuration dynamique du middleware CORS
+const allowedOrigins = process.env.NODE_ENV === 'production' ? 
+  ['https://mon-site-en-prod.com', 'https://app.mon-site-en-prod.com'] : 
+  ['http://localhost:3000', 'http://localhost:5173'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // Permettre l'envoi de cookies si nécessaire
+}));
 
 // Middleware de logging
 app.use(morgan('combined', { stream: logger.stream }));
@@ -42,7 +61,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Middleware pour servir les fichiers statiques (ex. images uploadées)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Ajouter les headers CORS nécessaires aux ressources statiques
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Définition des routes
 app.use('/auth', authRoutes);
